@@ -1,4 +1,5 @@
 import requests
+
 from bs4 import BeautifulSoup
 from .exceptions import BroadQueryError, QueryError
 
@@ -60,7 +61,7 @@ def search_athletes(firstname=None, surname=None, club=None):
     return list_of_athletes
 
 
-def get_athlete(athlete_id):
+def get_athlete(athlete_id, view_by_age=False):
     '''
     Returns a dictionary of athlete data for specified athlete id.
 
@@ -107,6 +108,9 @@ def get_athlete(athlete_id):
         raise QueryError('Please input a valid athlete id.')
 
     url = f'https://www.thepowerof10.info/athletes/profile.aspx?athleteid={athlete_id}'
+    if view_by_age:
+       url += '&viewby=agegraded'
+
     html = requests.get(url)
     soup = BeautifulSoup(html.text, 'html.parser')
     
@@ -149,20 +153,52 @@ def get_athlete(athlete_id):
                 })
     
     try:
-        athlete_perf = soup.find('div', {'id': 'cphBody_pnlPerformances'}).find_all('table')[1].find_all('tr')
-        performances = []
-        for i in athlete_perf:
-            if len(i.find_all('td')) > 1 and 'EventPerfPosVenueMeetingDate' != i.text:
-                dets = i.find_all('td')
-                performances.append({
-                    'event': dets[0].text,
-                    'value': dets[1].text,
-                    'position': [dets[5].text, dets[6].text],
-                    'venue': dets[9].text,
-                    'meeting': dets[10].text,
-                    'date': dets[11].text
-                })
+        if not view_by_age:
+            athlete_perf = soup.find('div', {'id': 'cphBody_pnlPerformances'}).find_all('table')[1].find_all('tr')
+            performances = []
+            age_group = ""
+            for i in athlete_perf:
+                # Parse the age category and club
+                # <a name="2024"><b>2024 V55 Tunbridge Wells</b></a> 2024
+                year_group_club = i.find('a', {'name': True})
+                if year_group_club:
+                    _, age_group, club = year_group_club.text.split(" ", maxsplit=2)
+
+                if len(i.find_all('td')) > 1 and 'EventPerfPosVenueMeetingDate' != i.text:
+                    dets = i.find_all('td')
+                    performances.append({
+                        'event': dets[0].text,
+                        'value': dets[1].text,
+                        'position': [dets[5].text, dets[6].text],
+                        'venue': dets[9].text,
+                        'meeting': dets[10].text,
+                        'date': dets[11].text,
+                        'age group': age_group,
+                        'club': club,
+                    })
+        else:
+            athlete_perf = soup.find('div', {'id': 'cphBody_pnlPerformances'}).find_all('table')[1].find_all('tr')
+            performances = []
+            age_group = ""
+            for i in athlete_perf:
+                if len(i.find_all('td')) > 1 and 'EventPerfPosVenueMeetingDate' != i.text:
+                    dets = i.find_all('td')
+                    if dets[1].text == "Event":
+                        continue
+                    performances.append({
+                        'event': dets[1].text,
+                        'value': dets[2].text,
+                        'points': dets[6].text,
+                        'age_grade': dets[7].text,
+                        'age': dets[8].text,
+                        'position': [dets[9].text, dets[10].text],
+                        'venue': dets[13].text,
+                        'meeting': dets[14].text,
+                        'date': dets[15].text,
+                        #'club': club,
+                    })
     except Exception as e:
+        print("### Warn: failed to parser performances", e)
         performances = []
 
     try:
