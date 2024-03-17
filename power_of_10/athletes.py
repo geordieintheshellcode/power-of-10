@@ -153,6 +153,8 @@ def get_athlete(athlete_id, view_by_age=False):
                 })
     
     try:
+        # TODO: would be more efficient if we could do `view_by_age` as part of
+        # the normal API call, rather than having to call get_athlete() twice.
         if not view_by_age:
             athlete_perf = soup.find('div', {'id': 'cphBody_pnlPerformances'}).find_all('table')[1].find_all('tr')
             performances = []
@@ -185,6 +187,14 @@ def get_athlete(athlete_id, view_by_age=False):
                     dets = i.find_all('td')
                     if dets[1].text == "Event":
                         continue
+
+                    # Parse the results URL if it's present
+                    results_url = None
+                    tag = dets[13].find("a", href=True)
+                    if tag and tag["href"]:
+                        results_url = tag["href"]
+                        results_url = "https://www.thepowerof10.info/athletes/" + results_url
+
                     performances.append({
                         'event': dets[1].text,
                         'value': dets[2].text,
@@ -193,12 +203,12 @@ def get_athlete(athlete_id, view_by_age=False):
                         'age': dets[8].text,
                         'position': [dets[9].text, dets[10].text],
                         'venue': dets[13].text,
+                        'results_url': results_url,
                         'meeting': dets[14].text,
                         'date': dets[15].text,
-                        #'club': club,
                     })
     except Exception as e:
-        print("### Warn: failed to parser performances", e)
+        print("### Warn: failed to parse performances", e)
         performances = []
 
     try:
