@@ -201,7 +201,11 @@ def get_athlete(athlete_id, view_by_age=False):
                         'points': dets[6].text,
                         'age_grade': dets[7].text,
                         'age': dets[8].text,
-                        'position': [dets[9].text, dets[10].text],
+                        # pos[0]: position overall
+                        # pos[1]: lane, leg, race #., etc.
+                        # pos[2]: gender position
+                        # pos[3]: category position
+                        'position': {'overall': dets[9].text, 'lane': dets[10].text, 'gender': dets[11].text, 'category': dets[12].text},
                         'venue': dets[13].text,
                         'results_url': results_url,
                         'meeting': dets[14].text,
