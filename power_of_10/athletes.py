@@ -171,6 +171,7 @@ def get_athlete(athlete_id, view_by_age=False):
                     performances.append({
                         'event': dets[0].text,
                         'value': dets[1].text,
+                        'other': dets[2].text,
                         'position': [dets[5].text, dets[6].text],
                         'venue': dets[9].text,
                         'meeting': dets[10].text,
@@ -198,6 +199,7 @@ def get_athlete(athlete_id, view_by_age=False):
                     performances.append({
                         'event': dets[1].text,
                         'value': dets[2].text,
+                        'other': dets[3].text,
                         'points': dets[6].text,
                         'age_grade': dets[7].text,
                         'age': dets[8].text,
